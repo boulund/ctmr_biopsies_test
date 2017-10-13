@@ -13,7 +13,6 @@ kaiju_db = file(params.kaiju_db)
 kaiju_nodes = file(params.kaiju_nodes)
 kaiju_names = file(params.kaiju_names)
 metaphlan_pickle = file(params.metaphlan_pickle)
-metaphlan_bowtie2_db = file(params.metaphlan_reference)
 
 // Channels with paired input reads
 Channel
@@ -28,12 +27,13 @@ Channel
  ****************************************/
 process kaiju {
     tag {pair_id}
-    publishDir "${params.outdir}/kaiju", mode: 'copy'
+    publishDir "${params.outdir}/kaiju", mode: 'link'
 
     input:
     set pair_id, file(reads) from input_reads_kaiju
     file database from kaiju_db
     file nodes from kaiju_nodes
+    file names from kaiju_names
 
     output:
     file "${pair_id}.kaiju"
@@ -83,24 +83,24 @@ process kaiju {
 
 process metaphlan2 {
     tag {pair_id}
-    publishDir "${params.outdir}/metaphlan2", mode: 'copy'
+    publishDir "${params.outdir}/metaphlan2", mode: 'link'
 
     input:
     set pair_id, file(reads) from input_reads_metaphlan2
     file mpa_pickle from metaphlan_pickle
-    file bowtie2db from metaphlan_bowtie2_reference 
 
     output:
     file "${pair_id}.bowtie2.bz2"
     file "${pair_id}.metaphlan2.txt" 
 
     """
+    source activate metaphlan2
     metaphlan2.py \
-        --nproc {task.cpus} \
+        --nproc ${task.cpus} \
         --bowtie2out ${pair_id}.bowtie2.bz2 \
         --input_type fastq \
         --mpa_pkl $mpa_pickle \
-        --bowtie2db $bowtie2db \
+        --bowtie2db ${params.metaphlan_bowtie2_db} \
         --sample_id ${pair_id} \
         ${reads[0]},${reads[1]} \
         ${pair_id}.metaphlan2.txt 
