@@ -92,6 +92,7 @@ process metaphlan2 {
     output:
     file "${pair_id}.bowtie2.bz2"
     file "${pair_id}.metaphlan2.txt" 
+    set pair_id, file("${pair_id}.krona") into input_metaphlan_krona
 
     """
     source activate metaphlan2
@@ -104,6 +105,27 @@ process metaphlan2 {
         --sample_id ${pair_id} \
         ${reads[0]},${reads[1]} \
         ${pair_id}.metaphlan2.txt 
+    metaphlan2krona.py \
+        -p ${pair_id}.metaphlan2.txt \
+        -k ${pair_id}.krona
     """
 }
 
+
+process make_metaphlan_krona {
+    tag {pair_id}
+    publishDir "${params.outdir}/metaphlan2", mode: 'link'
+
+    input:
+    set pair_id, file(metaphlan2_krona) from input_metaphlan_krona
+
+    output:
+    file "${pair_id}.krona.html" 
+    file "${pair_id}.krona"
+
+    """
+    ktImportText \
+        -o ${pair_id}.krona.html \
+        $metaphlan2_krona
+    """
+}
