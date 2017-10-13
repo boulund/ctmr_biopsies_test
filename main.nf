@@ -121,7 +121,6 @@ process make_metaphlan_krona {
 
     output:
     file "${pair_id}.krona.html" 
-    file "${pair_id}.krona"
 
     """
     ktImportText \
