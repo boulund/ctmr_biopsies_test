@@ -19,7 +19,8 @@ Channel
     .fromFilePairs(params.input_reads)
     .ifEmpty{ exit 1, "Found no input reads, did you specify --input_reads? I got: '${params.input_reads}'"}
     .into {input_reads_kaiju;
-           input_reads_metaphlan2}
+           input_reads_metaphlan2;
+           input_reads_centrifuge}
 
 
 /****************************************
@@ -127,4 +128,29 @@ process make_metaphlan_krona {
         -o ${pair_id}.krona.html \
         $metaphlan2_krona
     """
+}
+
+
+process centrifuge {
+    tag {pair_id}
+    publishDir "${params.outdir}/centrifuge", mode: 'link'
+
+    input:
+    set pair_id, file(reads) from input_reads_centrifuge
+
+    output:
+    file "${pair_id}.centrifuge_report.tsv" 
+    file "${pair_id}.centrifuge.txt" 
+
+    """
+    centrifuge \
+        -x ${params.centrifuge_db_prefix} \
+        -1 ${reads[0]} \
+        -2 ${reads[1]} \
+        -S ${pair_id}.centrifuge.txt \
+        --report-file ${pair_id}.centrifuge_report.tsv \
+        --threads ${task.cpus} \
+        --time 
+    """
+
 }
